@@ -15,7 +15,8 @@
     "test": "vitest run",
     "test:unit": "vitest run --reporter=verbose unit.test",
     "test:unit:wait": "vitest --reporter=verbose unit.test",
-    "idx-extract-sold-data": "tsx scripts/idx-extract-sold-data.ts"
+    "idx-extract-sold-data": "tsx scripts/idx-extract-sold-data.ts",
+    "idx-extract-zip-codes": "tsx scripts/list-zip-codes-for-counties.ts"
   },
   "dependencies": {
     "react": "^19.2.6",

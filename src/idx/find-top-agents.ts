@@ -1,6 +1,7 @@
 import { TOP_AGENTS } from './constants';
 import { getCountiesLookup } from './files/get-counties-lookup';
 import { getListings } from './files/get-listings';
+import { getScrappedAgentsLookup } from './files/get-scrapped-agents-lookup';
 import { getTownsLookup } from './files/get-towns-lookup';
 import { type IDXListingType } from './idx-listing-type';
 
@@ -33,7 +34,9 @@ const updateAgentListings = (records: AgentListingRecords, agentID: string, list
 
 type TopAgentEntry = [string, number, number];
 
-export const findTopAgents = async (): Promise<TopAgentEntry[]> => {
+export type TopAgentEntryType = [string, string, string, string, number, number];
+
+export const findTopAgents = async (): Promise<TopAgentEntryType[]> => {
   const countiesLookup = await getCountiesLookup();
   const townsLookup = await getTownsLookup(countiesLookup);
   const listings = await getListings(townsLookup);
@@ -51,5 +54,19 @@ export const findTopAgents = async (): Promise<TopAgentEntry[]> => {
     .toSorted((a, b) => b[2] - a[2])
     .slice(0, TOP_AGENTS);
 
-  return topAgents;
+  const agentsLookup = await getScrappedAgentsLookup();
+  await getScrappedAgentsLookup();
+
+  let errorId = 1;
+
+  return topAgents
+    .map<TopAgentEntryType | null>(([id, transactions, amount], topIndex) => {
+      const agent = agentsLookup[id];
+      if (!agent) {
+        console.error(`${errorId++} Invalid agent ID "${id}" (top ${topIndex + 1})`);
+        return null;
+      }
+      return [agent['agent.id'], agent['agent.name'], agent['agent.email'], agent['agent.phone'], transactions, amount];
+    })
+    .filter((data) => data !== null);
 };

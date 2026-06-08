@@ -8,7 +8,11 @@ const main = async () => {
   console.log('Script running...');
   const topAgents = await findTopAgents();
 
-  const csvStream = format({ headers: ['id', 'transactions', 'amount'], delimiter: '\t', quote: true });
+  const csvStream = format({
+    headers: ['id', 'firstName', 'lastName', 'email', 'phone', 'transactions', 'amount'],
+    delimiter: '\t',
+    quote: true,
+  });
 
   csvStream.pipe(process.stdout);
   topAgents.forEach((topAgent) => {
