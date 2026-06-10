@@ -21,12 +21,18 @@ const extractMAzips = async (): Promise<GeoDataType[]> =>
   new Promise((resolve) => {
     const records: GeoDataType[] = [];
 
+    const existingZips = new Set<string>();
+
     fs.createReadStream('src/idx/geo-data.csv')
       .pipe(parse({ headers: true, delimiter: ',' }))
       .on('error', (error) => console.error(error))
       .on('data', (data: GeoDataType) => {
         if (data.state_abbr === 'MA' && digitOnlyZipCode(data.zipcode)) {
+          if (existingZips.has(data.zipcode)) {
+            console.warn(`Already used ${data.zipcode}`);
+          }
           records.push(data);
+          existingZips.add(data.zipcode);
         }
       })
       .on('end', (rowCount: number) => {
@@ -34,6 +40,16 @@ const extractMAzips = async (): Promise<GeoDataType[]> =>
         resolve(records);
       });
   });
+
+const chunk = (zipcodes: string[], size: number): string[][] => {
+  const chunks: string[][] = [];
+
+  for (let i = 0; i < zipcodes.length; i += size) {
+    chunks.push(zipcodes.slice(i, i + size));
+  }
+
+  return chunks;
+};
 
 const main = async () => {
   const records = await extractMAzips();
@@ -49,7 +65,14 @@ const main = async () => {
     {} as Record<string, string[]>,
   );
 
-  console.log(`ZipCodes by Counties:`, recordsByCounty);
+  console.log(`ZipCodes by Counties:`);
+  Object.entries(recordsByCounty).forEach(([county, zipCodes]) => {
+    console.log(`    ${county}`);
+    const chunks = chunk(zipCodes, 8);
+    chunks.forEach((zipCodesChunk) => {
+      console.log(`        ${zipCodesChunk.join(',')}`);
+    });
+  });
 };
 
 main();

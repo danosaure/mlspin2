@@ -17,7 +17,7 @@ const updateAgentListings = (records: AgentListingRecords, agentID: string, list
     // Can happen when listing is under agreement STATUS=UAG.
     return records;
   }
-  let agentListingAnalytics: AgentListingAnalytics = records[agentID];
+  let agentListingAnalytics: AgentListingAnalytics = records[agentID.toUpperCase()];
   if (!agentListingAnalytics) {
     agentListingAnalytics = {
       count: 0,
@@ -28,7 +28,7 @@ const updateAgentListings = (records: AgentListingRecords, agentID: string, list
   agentListingAnalytics.count++;
   agentListingAnalytics.total += Number.parseInt(listing.SALE_PRICE || listing.LIST_PRICE);
 
-  records[agentID] = agentListingAnalytics;
+  records[agentID.toUpperCase()] = agentListingAnalytics;
   return records;
 };
 
@@ -55,18 +55,27 @@ export const findTopAgents = async (): Promise<TopAgentEntryType[]> => {
     .slice(0, TOP_AGENTS);
 
   const agentsLookup = await getScrappedAgentsLookup();
-  await getScrappedAgentsLookup();
 
-  let errorId = 1;
+  let errorId = 0;
 
-  return topAgents
-    .map<TopAgentEntryType | null>(([id, transactions, amount], topIndex) => {
-      const agent = agentsLookup[id];
-      if (!agent) {
-        console.error(`${errorId++} Invalid agent ID "${id}" (top ${topIndex + 1})`);
-        return null;
-      }
-      return [agent['agent.id'], agent['agent.name'], agent['agent.email'], agent['agent.phone'], transactions, amount];
-    })
-    .filter((data) => data !== null);
+  try {
+    return topAgents
+      .map<TopAgentEntryType>(([id, transactions, amount], topIndex) => {
+        const agent = agentsLookup[id];
+        if (!agent) {
+          errorId += 1;
+
+          if (errorId <= 25) {
+            console.error(`${errorId} Invalid agent ID "${id}" (top ${topIndex + 1})`);
+          }
+          return [id, '', '', '', transactions, amount];
+        }
+        return [agent['agent.id'], agent['agent.name'], agent['agent.email'], agent['agent.phone'], transactions, amount];
+      })
+      .filter((data) => data !== null);
+  } finally {
+    if (errorId) {
+      console.error(`Missing ${errorId} in the top agents.`);
+    }
+  }
 };

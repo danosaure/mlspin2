@@ -9,8 +9,8 @@ const main = async () => {
   const topAgents = await findTopAgents();
 
   const csvStream = format({
-    headers: ['id', 'firstName', 'lastName', 'email', 'phone', 'transactions', 'amount'],
-    delimiter: '\t',
+    headers: ['id', 'name', 'email', 'phone', 'transactions', 'amount'],
+    delimiter: ',',
     quote: true,
   });
 
